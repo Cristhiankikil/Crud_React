@@ -1,0 +1,104 @@
+version: "3"
+
+services:
+  db:
+    container_name: "postgres-react"
+    build: ./postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=cedup
+      - POSTGRES_PASSWORD=cedup
+      - POSTGRES_DB=cedup
+    volumes:
+      - ./data:/data/postgres
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.11
+
+  app1:
+    container_name: "projeto-react"
+    build: .
+    command: npm start
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.10
+
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/usr/app
+    depends_on:
+      - db
+    restart: always
+
+  app2:
+    container_name: "produto-project"
+    build: .
+    command: npm start
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.40
+
+    ports:
+      - "4001:4000"
+    volumes:
+      - .:/usr/app
+    depends_on:
+      - db
+    restart: always
+
+  pgadm:
+    image: dpage/pgadmin4
+    container_name: "postgres-pgadm"
+    ports:
+      - "82:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=cristhianmendesk@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=cedup
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.12
+    depends_on:
+      - db
+
+  frontend:
+    image: dpage/frontend
+    container_name: "frontend-project"
+    build: ../frontend
+    depends_on: 
+    - app1
+    ports:
+      - "3004:3001"
+    volumes:
+      - ../frontend:/usr/app
+    restart: always
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.13
+    environment:
+      - WDS_SOCKET_PORT=0
+  frontend_produto:
+    image: dpage/frontend_produto
+    container_name: "frontend-produto"
+    build: ../frontend_produto
+    depends_on: 
+    - app2
+    ports:
+      - "4004:4001"
+    volumes:
+      - ../frontend_produto:/usr/app
+    restart: always
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.43
+    environment:
+      - WDS_SOCKET_PORT=0
+
+networks:
+  app_net:
+    ipam:
+      driver:
+        default
+      config:
+        - subnet: "172.16.0.0/24"
